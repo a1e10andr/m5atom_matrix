@@ -17,8 +17,8 @@
 #include "led_strip.h"
 
 #define RMT_TX_CHANNEL                      RMT_CHANNEL_0
-#define CONFIG_EXAMPLE_STRIP_LED_NUMBER     25
-#define CONFIG_EXAMPLE_RMT_TX_GPIO          GPIO_NUM_27
+#define STRIP_LED_NUMBER                    25
+#define RMT_TX_GPIO                         GPIO_NUM_27
 
 #define COLOR_LEVEL                         25
 
@@ -52,7 +52,7 @@ void ws2812_led_task(void *pvParameter)
 
     for(;;) {
       if (msg.index == 0) {
-        msg.index = CONFIG_EXAMPLE_STRIP_LED_NUMBER - 1;
+        msg.index = STRIP_LED_NUMBER - 1;
         switch (state)
         {
         case red:
@@ -85,7 +85,7 @@ void ws2812_led_task(void *pvParameter)
 void ws2812_main_task(void *pvParameter)
 {
     printf("Initialize WS2812 driver ...\n"); 
-    led_strip_t *strip = led_strip_init(RMT_TX_CHANNEL, CONFIG_EXAMPLE_RMT_TX_GPIO, CONFIG_EXAMPLE_STRIP_LED_NUMBER);
+    led_strip_t *strip = led_strip_init(RMT_TX_CHANNEL, RMT_TX_GPIO, STRIP_LED_NUMBER);
     if (!strip) {
         printf("failed\n");
     }
@@ -118,9 +118,9 @@ void app_main(void)
     nvs_flash_init();
     
     printf("Initialize GPIO ...\n");
-    gpio_pad_select_gpio(CONFIG_EXAMPLE_RMT_TX_GPIO);
-    ESP_ERROR_CHECK(gpio_set_direction(CONFIG_EXAMPLE_RMT_TX_GPIO, GPIO_MODE_OUTPUT));
-    ESP_ERROR_CHECK(gpio_set_level(CONFIG_EXAMPLE_RMT_TX_GPIO, 0));
+    gpio_pad_select_gpio(RMT_TX_GPIO);
+    ESP_ERROR_CHECK(gpio_set_direction(RMT_TX_GPIO, GPIO_MODE_OUTPUT));
+    ESP_ERROR_CHECK(gpio_set_level(RMT_TX_GPIO, 0));
 
     ws2812QueueHandle = xQueueCreate(5, sizeof(WS2812Message));
 
