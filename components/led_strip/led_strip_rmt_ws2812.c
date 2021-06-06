@@ -116,7 +116,7 @@ static esp_err_t ws2812_refresh(led_strip_t *strip, uint32_t timeout_ms)
     gpio_set_level(ws2812->gpio, 1);
     gpio_set_level(ws2812->gpio, 0);
     vTaskDelay(pdMS_TO_TICKS(WS2812_RESET_US));
-
+	
     STRIP_CHECK(rmt_write_sample(ws2812->rmt_channel, ws2812->buffer, ws2812->strip_len * 3, true) == ESP_OK,
                 "transmit RMT samples failed", err, ESP_FAIL);
     return rmt_wait_tx_done(ws2812->rmt_channel, pdMS_TO_TICKS(timeout_ms));

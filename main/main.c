@@ -100,24 +100,6 @@ void ws2812_main_task(void *pvParameter)
     vTaskDelete(NULL);
 }
 
-void ws2812_display_task(void *pvParameter)
-{
-    printf("Initialize WS2812 driver ...\n"); 
-    led_strip_t *strip = led_strip_init(RMT_TX_CHANNEL, CONFIG_EXAMPLE_RMT_TX_GPIO, CONFIG_EXAMPLE_STRIP_LED_NUMBER);
-    if (!strip) {
-        printf("failed\n");
-    }
-
-    WS2812Message msg;
-    for(;;) {
-      if(xQueueReceive(ws2812QueueHandle, &msg, (TickType_t)1000)) {
-        ESP_ERROR_CHECK(strip->set_pixel(strip,  msg.index, msg.r, msg.g, msg.b));
-        ESP_ERROR_CHECK(strip->refresh(strip, 100));
-      }
-    }
-    vTaskDelete(NULL);
-}
-
 void app_main(void)
 {
     /* Print chip information */
