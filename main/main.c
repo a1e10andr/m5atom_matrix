@@ -32,7 +32,7 @@ typedef struct structWS2812Message
     uint8_t r;
     uint8_t g;
     uint8_t b;
- } WS2812Message;
+ } WS2812Message_t;
 
 typedef enum enumState {
   red = 0,
@@ -40,10 +40,89 @@ typedef enum enumState {
   blue = 2,
 } state_t;
 
+typedef state_t (*stateFunction_t)(WS2812Message_t *);
+
+static uint8_t digits[10][15] = {
+    {0, 1, 0, 
+     1, 0, 1,
+     1, 0, 1,
+     1, 0, 1,
+     0, 1, 0},
+    {0, 1, 0, 
+     1, 1, 0,
+     0, 1, 0,
+     0, 1, 0, 
+     1, 1, 1},
+    {1, 1, 0, 
+     0, 0, 1,
+     0, 1, 0,
+     1, 0, 0, 
+     1, 1, 1},
+    {1, 1, 0, 
+     0, 0, 1,
+     0, 1, 0,
+     0, 0, 1, 
+     1, 1, 1},
+    {1, 0, 1, 
+     1, 0, 1,
+     1, 1, 0,
+     0, 0, 1, 
+     0, 0, 1},
+    {0, 1, 1, 
+     1, 0, 0,
+     1, 1, 0,
+     0, 0, 1, 
+     1, 1, 0},
+    {0, 1, 1, 
+     1, 0, 0,
+     1, 1, 0,
+     1, 0, 1, 
+     1, 1, 0},
+    {1, 1, 1, 
+     0, 0, 1,
+     0, 1, 0,
+     0, 1, 0, 
+     0, 1, 0},
+    {0, 1, 0, 
+     1, 0, 1,
+     0, 1, 0,
+     1, 0, 1, 
+     0, 1, 0},
+    {0, 1, 0, 
+     1, 0, 1,
+     0, 1, 1,
+     0, 0, 1, 
+     1, 1, 0},
+};
+
+static state_t ws2812_led_task__state__red(WS2812Message_t *msg) {
+    msg->r = 0;
+    msg->g = COLOR_LEVEL;
+    return green;    
+}
+
+static state_t ws2812_led_task__state__green(WS2812Message_t *msg) {
+    msg->g = 0;
+    msg->b = COLOR_LEVEL;
+    return blue;    
+}
+
+static state_t ws2812_led_task__state__blue(WS2812Message_t *msg) {
+    msg->b = 0;
+    msg->r = COLOR_LEVEL;
+    return red;    
+}
+
 void ws2812_led_task(void *pvParameter)
 {
     state_t state = red;
-    WS2812Message msg = {
+    stateFunction_t fn[3] = {
+        ws2812_led_task__state__red,
+        ws2812_led_task__state__green,
+        ws2812_led_task__state__blue
+    };
+
+    WS2812Message_t msg = {
       .index = 0,
       .r = COLOR_LEVEL,
       .g = 0,
@@ -53,6 +132,8 @@ void ws2812_led_task(void *pvParameter)
     for(;;) {
       if (msg.index == 0) {
         msg.index = STRIP_LED_NUMBER - 1;
+        fn[state](&msg);
+        /*
         switch (state)
         {
         case red:
@@ -73,6 +154,7 @@ void ws2812_led_task(void *pvParameter)
         default:
           break;
         }
+        */
       } else {
         msg.index -= 1;
       }
@@ -90,7 +172,7 @@ void ws2812_main_task(void *pvParameter)
         printf("failed\n");
     }
 
-    WS2812Message msg;
+    WS2812Message_t msg;
     for(;;) {
       if(xQueueReceive(ws2812QueueHandle, &msg, (TickType_t)1000)) {
         ESP_ERROR_CHECK(strip->set_pixel(strip,  msg.index, msg.r, msg.g, msg.b));
@@ -122,7 +204,7 @@ void app_main(void)
     ESP_ERROR_CHECK(gpio_set_direction(RMT_TX_GPIO, GPIO_MODE_OUTPUT));
     ESP_ERROR_CHECK(gpio_set_level(RMT_TX_GPIO, 0));
 
-    ws2812QueueHandle = xQueueCreate(5, sizeof(WS2812Message));
+    ws2812QueueHandle = xQueueCreate(5, sizeof(WS2812Message_t));
 
     TaskHandle_t ws2812Handle = NULL;
     xTaskCreate(ws2812_main_task, "ws2812main", STACK_SIZE, NULL, tskIDLE_PRIORITY, &ws2812Handle);
@@ -131,9 +213,4 @@ void app_main(void)
     TaskHandle_t wsLedHandle = NULL;
     xTaskCreate(ws2812_led_task, "led", STACK_SIZE, NULL, tskIDLE_PRIORITY, &wsLedHandle);
     configASSERT(wsLedHandle);
-    
-    while (true)
-    {
-      vTaskDelay(pdMS_TO_TICKS(1000));
-    }
 }
